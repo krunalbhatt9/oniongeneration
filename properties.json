@@ -17,6 +17,24 @@
 		"ip": "localhost",
 		"port": 3335,
 		"key": "d30b48a540e6166c6cba2ec8ac13bbcd31d79bd01c539051d68695aaa121fd44"
+	  },
+	  {
+		"name": "4",
+		"ip": "localhost",
+		"port": 3336,
+		"key": "d30b48a540e6166c6cba1ec8ac13bbcd31d79bd01c539051d68695aaa121fd11"
+	  },
+	  {
+		"name": "5",
+		"ip": "localhost",
+		"port": 3337,
+		"key": "d30b48a540e6166c6cba2ec8ac33bbcd31d79bd01c539051d68695aaa121fd77"
+	  },
+	  {
+		"name": "6",
+		"ip": "localhost",
+		"port": 3338,
+		"key": "d30b48a540e6166c6cba2ec8ac13cccd31d79bd01c539051d68695aaa121fd78"
 	  }
 	]
   }
