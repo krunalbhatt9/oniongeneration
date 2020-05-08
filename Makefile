@@ -8,3 +8,7 @@ run:
 	nohup ./bin/server -router 0 &
 	nohup ./bin/server -router 1 &
 	./bin/client
+clean:
+	rm -f ./bin/server
+	rm -f ./bin/client
+	pkill "./bin/server"

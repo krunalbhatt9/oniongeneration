@@ -10,14 +10,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/krunalbhatt9/oniongeneration/onions"
 )
 
+var seededRand *rand.Rand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
 var (
 	selectedRouter onions.Router
 	gcm            cipher.AEAD
@@ -98,8 +102,12 @@ func ReadandSendMessage(message []string) {
 	// randomString := string(token)
 	// message = append(randomString, message)
 	log.Printf("Router %s: ReRouting the packet to %s", selectedRouter.Name, addr)
+	message = message[:length]
+	random := strconv.Itoa(rand.Int())
+	encryptedRandom := []string{string(onions.Encrypt([]byte(random), gcm, nonceSize))}
 
-	SocketClient(message[:length], addr)
+	message = append(encryptedRandom, message...)
+	SocketClient(message, addr)
 
 }
 
@@ -132,7 +140,7 @@ func handleConnection(conn net.Conn) {
 	dec := gob.NewDecoder(conn)
 	p := &onions.Message{}
 	dec.Decode(p)
-	fmt.Println("Received : %d", len(p.A))
+	//fmt.Println("Received : %d", len(p.A))
 	ReadandSendMessage(p.A)
 	conn.Close()
 }
