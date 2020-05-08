@@ -24,29 +24,24 @@ var (
 	nonceSize      int
 )
 
-const (
-	//StopCharacter while reading it should stop at this
-	StopCharacter = "\r\n\r\n"
-)
-
 func initializeGCM() {
 
 	key, error := hex.DecodeString(selectedRouter.Key)
 	if error != nil {
-		fmt.Printf("Error reading key: %s\n", error.Error())
+		fmt.Printf("Router %s: Error reading key: %s\n", selectedRouter.Name, error.Error())
 		os.Exit(1)
 	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		fmt.Printf("Error reading key: %s\n", err.Error())
+		fmt.Printf("Router %s: Error reading key: %s\n", selectedRouter.Name, err.Error())
 		os.Exit(1)
 	}
 
-	fmt.Printf("Key: %s\n", hex.EncodeToString(key))
+	//fmt.Printf("Key: %s\n", hex.EncodeToString(key))
 
 	gcm, err = cipher.NewGCM(block)
 	if err != nil {
-		fmt.Printf("Error initializing AEAD: %s\n", err.Error())
+		fmt.Printf("Router %s: Error initializing AEAD: %s\n", selectedRouter.Name, err.Error())
 		os.Exit(1)
 	}
 
@@ -58,8 +53,8 @@ func SocketClient(message []string, addr string) {
 	//addr := strings.Join([]string{IP, strconv.Itoa(port)}, ":")
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
-		log.Printf("Ip address could not be resolved. The message has reached the last node in the chain")
-		log.Printf("The message is :%s", addr)
+		log.Printf("Router %s: Ip address could not be resolved. The message has reached the last node in the chain", selectedRouter.Name)
+		log.Printf("Router %s: The message is :%s", selectedRouter.Name, addr)
 		//log.Fatalln(err)
 		//os.Exit(1)
 		return
@@ -77,26 +72,27 @@ func SocketClient(message []string, addr string) {
 	//conn.Write([]byte(StopCharacter))
 	//log.Printf("Send: %s", message)
 
-	buff := make([]byte, 1024)
-	n, _ := conn.Read(buff)
-	log.Printf("Receive: %s", buff[:n])
+	// buff := make([]byte, 1024)
+	// n, _ := conn.Read(buff)
+	// log.Printf("Receive: %s", buff[:n])
 
 }
 
 //ReadandSendMessage reads and sends the message
 func ReadandSendMessage(message []string) {
+	log.Printf("Router %s: Decrypting the packet", selectedRouter.Name)
 	length := len(message) - 1
 	for i, s := range message {
 		s, err := onions.Decrypt([]byte(s), gcm, nonceSize)
 		message[i] = string(s)
 		if err != nil {
-			log.Printf("Failed to decrypt.Message %s recived", message)
+			log.Printf("Router %s: Failed to decrypt.Message %s recived", selectedRouter.Name, message)
 			return
 			//os.Exit(1)
 		}
 	}
 	addr := message[length]
-	log.Printf("addr to send to", addr)
+	log.Printf("Router %s: ReRouting the packet to %s", selectedRouter.Name, addr)
 	SocketClient(message[:length], addr)
 
 }
@@ -107,13 +103,13 @@ func SocketServer(IP string, port int) {
 	listen, err := net.Listen("tcp4", ":"+strconv.Itoa(port))
 
 	if err != nil {
-		log.Fatalf("Socket listen port %d failed,%s", port, err)
+		log.Fatalf("Router %s: Socket listen port %d failed, %s", selectedRouter.Name, port, err)
 		os.Exit(1)
 	}
 
 	defer listen.Close()
 
-	log.Printf("Begin listen port: %d", port)
+	log.Printf("Router %s : Begin listen port: %d", selectedRouter.Name, port)
 
 	for {
 		conn, err := listen.Accept()
@@ -130,7 +126,7 @@ func handleConnection(conn net.Conn) {
 	dec := gob.NewDecoder(conn)
 	p := &onions.Message{}
 	dec.Decode(p)
-	fmt.Printf("Received : %s", p)
+	//fmt.Printf("Received : %s", p)
 	ReadandSendMessage(p.A)
 	conn.Close()
 }
@@ -186,7 +182,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Successfully Opened properties.json")
+	//log.Printf("Router: Successfully Opened properties.json")
 	defer jsonFile.Close()
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 
