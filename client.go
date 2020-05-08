@@ -67,7 +67,7 @@ func SendOnion(a []string, addr string) {
 	//log.Printf("Sending to ", b)
 
 	p := &onions.Message{a}
-	log.Printf("Client: Sending the onion too %s", addr)
+	log.Printf("Client: Sending the onion to %s", addr)
 
 	//addr := strings.Join([]string{ip, strconv.Itoa(port)}, ":")
 	conn, err := net.Dial("tcp", string(addr))
