@@ -91,8 +91,14 @@ func ReadandSendMessage(message []string) {
 			//os.Exit(1)
 		}
 	}
+
 	addr := message[length]
+	// token := make([]byte, 32)
+	// rand.Read(token)
+	// randomString := string(token)
+	// message = append(randomString, message)
 	log.Printf("Router %s: ReRouting the packet to %s", selectedRouter.Name, addr)
+
 	SocketClient(message[:length], addr)
 
 }
@@ -126,7 +132,7 @@ func handleConnection(conn net.Conn) {
 	dec := gob.NewDecoder(conn)
 	p := &onions.Message{}
 	dec.Decode(p)
-	//fmt.Printf("Received : %s", p)
+	fmt.Println("Received : %d", len(p.A))
 	ReadandSendMessage(p.A)
 	conn.Close()
 }
