@@ -1,0 +1,16 @@
+{
+	"routers": [
+	  {
+		"name": "1",
+		"ip": "localhost",
+		"port": 3333,
+		"key": "c8e63ff24118dee4dfdf5d865a913088a846e381b8b03ffb723df41f2b1e970f"
+	  },
+	  {
+		"name": "2",
+		"ip": "localhost",
+		"port": 3334,
+		"key": "d30b48a540e6166c6cba2ec8ac13bbcd31d79bd01c539051d68695aaa121fd33"
+	  }
+	]
+  }
