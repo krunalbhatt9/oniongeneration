@@ -1,14 +1,14 @@
-hello:
-	echo "Hello"
+help:
+	echo "please run make build, make run or make clean"
 
 build:
-	go build -o bin/client client.go
-	go build -o bin/server server.go
+	go build -o bin/onionclient client.go
+	go build -o bin/onionserver server.go
 run:
-	nohup ./bin/server -router 0 &
-	nohup ./bin/server -router 1 &
-	./bin/client
+	nohup ./bin/onionserver -router 0 &
+	nohup ./bin/onionserver -router 1 &
+	./bin/onionclient
 clean:
-	rm -f ./bin/server
-	rm -f ./bin/client
-	pkill "./bin/server"
+	rm -f ./bin/onionserver
+	rm -f ./bin/onionclient
+	pkill "onionserver"

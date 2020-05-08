@@ -90,8 +90,8 @@ func ReadandSendMessage(message []string) {
 		s, err := onions.Decrypt([]byte(s), gcm, nonceSize)
 		message[i] = string(s)
 		if err != nil {
-			log.Printf("Router %s: Failed to decrypt.Message %s recived", selectedRouter.Name, message)
-			return
+			//log.Printf("Router %s: Failed to decrypt.Message %s recived", selectedRouter.Name, message)
+
 			//os.Exit(1)
 		}
 	}
