@@ -6,16 +6,6 @@ import (
 	"fmt"
 )
 
-var (
-	gcm            cipher.AEAD
-	nonceSize      int
-	selectedRouter Router
-)
-
-const (
-	StopCharacter = "\r\n\r\n"
-)
-
 //Routers an array of routers
 type Routers struct {
 	Routers []Router `json:"routers"`
@@ -35,15 +25,15 @@ func randBytes(length int) []byte {
 	return b
 }
 
-func encrypt(plaintext []byte) (ciphertext []byte) {
+func encrypt(plaintext []byte, gcm cipher.AEAD, nonceSize int) (ciphertext []byte) {
 	nonce := randBytes(nonceSize)
 	c := gcm.Seal(nil, nonce, plaintext, nil)
 	return append(nonce, c...)
 }
 
-func decrypt(ciphertext []byte) (plaintext []byte, err error) {
+func decrypt(ciphertext []byte, gcm cipher.AEAD, nonceSize int) (plaintext []byte, err error) {
 	if len(ciphertext) < nonceSize {
-		return nil, fmt.Errorf("Ciphertext too short.")
+		return nil, fmt.Errorf("Ciphertext too short")
 	}
 	nonce := ciphertext[0:nonceSize]
 	msg := ciphertext[nonceSize:]

@@ -15,6 +15,19 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/krunalbhatt9/oniongeneration/onions"
+)
+
+var (
+	selectedRouter onions.Router
+	gcm            cipher.AEAD
+	nonceSize      int
+)
+
+const (
+	//StopCharacter while reading it should stop at this
+	StopCharacter = "\r\n\r\n"
 )
 
 func initializeGCM() {
@@ -65,9 +78,9 @@ func SocketClient(IP string, port int, message string) {
 }
 
 //ReadandSendMessage reads and sends the message
-func ReadandSendMessage(message string) {
-
-	SocketClient("127.0.0.1", 3334, "Hello")
+func ReadandSendMessage(message []byte) {
+	plaintext, err := onions.decrypt(message, gcm, nonceSize)
+	SocketClient("127.0.0.1", 3334, plaintext)
 }
 
 //SocketServer sends the message
@@ -158,7 +171,7 @@ func main() {
 	defer jsonFile.Close()
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 
-	var routers Routers
+	var routers onions.Routers
 	json.Unmarshal(byteValue, &routers)
 	// for i := 0; i < len(routers.Routers); i++ {
 	// 	fmt.Println("User Type: " + routers.Routers[i].IP)

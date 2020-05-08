@@ -1,4 +1,5 @@
 package main
+
 import (
 	"encoding/gob"
 	"fmt"
@@ -10,8 +11,7 @@ import (
 )
 
 const (
-	message       = "Ping"
-	StopCharacter = "\r\n\r\n"
+	message = "Ping"
 )
 
 //Message is a message to be sent
