@@ -19,23 +19,31 @@ type Router struct {
 	Key  string `json:"key"`
 }
 
-func randBytes(length int) []byte {
+//RandBytes gens random byte
+func RandBytes(length int) []byte {
 	b := make([]byte, length)
 	rand.Read(b)
 	return b
 }
 
-func encrypt(plaintext []byte, gcm cipher.AEAD, nonceSize int) (ciphertext []byte) {
-	nonce := randBytes(nonceSize)
+//Encrypt s the file
+func Encrypt(plaintext []byte, gcm cipher.AEAD, nonceSize int) (ciphertext []byte) {
+	nonce := RandBytes(nonceSize)
 	c := gcm.Seal(nil, nonce, plaintext, nil)
 	return append(nonce, c...)
 }
 
-func decrypt(ciphertext []byte, gcm cipher.AEAD, nonceSize int) (plaintext []byte, err error) {
+//Decrypt s the string
+func Decrypt(ciphertext []byte, gcm cipher.AEAD, nonceSize int) (plaintext []byte, err error) {
 	if len(ciphertext) < nonceSize {
 		return nil, fmt.Errorf("Ciphertext too short")
 	}
 	nonce := ciphertext[0:nonceSize]
 	msg := ciphertext[nonceSize:]
 	return gcm.Open(nil, nonce, msg, nil)
+}
+
+//Message structure
+type Message struct {
+	A, B []byte
 }

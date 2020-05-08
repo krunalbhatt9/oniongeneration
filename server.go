@@ -1,14 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -55,9 +54,9 @@ func initializeGCM() {
 }
 
 //SocketClient sends the message
-func SocketClient(IP string, port int, message string) {
-	addr := strings.Join([]string{IP, strconv.Itoa(port)}, ":")
-	conn, err := net.Dial("tcp", addr)
+func SocketClient(addr []byte, message []byte) {
+	//addr := strings.Join([]string{IP, strconv.Itoa(port)}, ":")
+	conn, err := net.Dial("tcp", string(addr))
 
 	if err != nil {
 		log.Fatalln(err)
@@ -66,10 +65,16 @@ func SocketClient(IP string, port int, message string) {
 	}
 
 	defer conn.Close()
+	encoder := gob.NewEncoder(conn)
+	a := []byte("Hell")
+	b := []byte("add")
 
-	conn.Write([]byte(message))
-	conn.Write([]byte(StopCharacter))
-	log.Printf("Send: %s", message)
+	p := &onions.Message{a, b}
+	encoder.Encode(p)
+
+	//conn.Write([]byte(message))
+	//conn.Write([]byte(StopCharacter))
+	//log.Printf("Send: %s", message)
 
 	buff := make([]byte, 1024)
 	n, _ := conn.Read(buff)
@@ -78,9 +83,21 @@ func SocketClient(IP string, port int, message string) {
 }
 
 //ReadandSendMessage reads and sends the message
-func ReadandSendMessage(message []byte) {
-	plaintext, err := onions.decrypt(message, gcm, nonceSize)
-	SocketClient("127.0.0.1", 3334, plaintext)
+func ReadandSendMessage(message []byte, address []byte) {
+	plaintext, err := onions.Decrypt(message, gcm, nonceSize)
+	if err != nil {
+		log.Printf("Failed to decrypt.")
+		//os.Exit(1)
+	} else {
+		addr, err := onions.Decrypt(address, gcm, nonceSize)
+		if err != nil {
+			log.Fatalf("Failed to decrypt. This message has reached the last node on the path.")
+			//os.Exit(1)
+		} else {
+			log.Printf("Receive: %s %s", plaintext, addr)
+			SocketClient(addr, plaintext)
+		}
+	}
 }
 
 //SocketServer sends the message
@@ -103,56 +120,57 @@ func SocketServer(IP string, port int) {
 			log.Fatalln(err)
 			continue
 		}
-		go handler(conn)
+		go handleConnection(conn)
 	}
 
 }
 
-// func handleConnection(conn net.Conn) {
-// 	dec := gob.NewDecoder(conn)
-// 	p := &Message{}
-// 	dec.Decode(p)
-// 	fmt.Printf("Received : %+v", p.IP)
-// 	ReadandSendMessage(p.IP, p.Port, p.Data)
-// 	conn.Close()
+func handleConnection(conn net.Conn) {
+	dec := gob.NewDecoder(conn)
+	p := &onions.Message{}
+	dec.Decode(p)
+	//fmt.Printf("Received : %+v", p)
+	ReadandSendMessage(p.A, p.B)
+	conn.Close()
+}
+
+// func handler(conn net.Conn) {
+
+// 	defer conn.Close()
+
+// 	var (
+// 		buf = make([]byte, 1024)
+// 		r   = bufio.NewReader(conn)
+// 		w   = bufio.NewWriter(conn)
+// 	)
+
+// ILOOP:
+// 	for {
+// 		n, err := r.Read(buf)
+// 		data := string(buf[:n])
+
+// 		switch err {
+// 		case io.EOF:
+// 			break ILOOP
+// 		case nil:
+// 			log.Println("Receive:", data)
+// 			if isTransportOver(data) {
+// 				b := []byte(data)
+// 				ReadandSendMessage(b)
+// 				break ILOOP
+// 			}
+
+// 		default:
+// 			log.Fatalf("Receive data failed:%s", err)
+// 			return
+// 		}
+
+// 	}
+// 	w.Write([]byte("OK"))
+// 	w.Flush()
+// 	log.Printf("Send: %s", "OK")
+
 // }
-
-func handler(conn net.Conn) {
-
-	defer conn.Close()
-
-	var (
-		buf = make([]byte, 1024)
-		r   = bufio.NewReader(conn)
-		w   = bufio.NewWriter(conn)
-	)
-
-ILOOP:
-	for {
-		n, err := r.Read(buf)
-		data := string(buf[:n])
-
-		switch err {
-		case io.EOF:
-			break ILOOP
-		case nil:
-			log.Println("Receive:", data)
-			if isTransportOver(data) {
-				ReadandSendMessage(data)
-				break ILOOP
-			}
-
-		default:
-			log.Fatalf("Receive data failed:%s", err)
-			return
-		}
-
-	}
-	w.Write([]byte("OK"))
-	w.Flush()
-	log.Printf("Send: %s", "OK")
-
-}
 
 func isTransportOver(data string) (over bool) {
 	over = strings.HasSuffix(data, "\r\n\r\n")
