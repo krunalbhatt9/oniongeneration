@@ -140,7 +140,7 @@ func handleConnection(conn net.Conn) {
 	dec := gob.NewDecoder(conn)
 	p := &onions.Message{}
 	dec.Decode(p)
-	fmt.Println("Received : %d", len(p.A))
+	//fmt.Println("Received : %d", len(p.A))
 	ReadandSendMessage(p.A)
 	conn.Close()
 }
