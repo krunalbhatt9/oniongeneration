@@ -11,6 +11,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/krunalbhatt9/oniongeneration/onions"
 )
@@ -24,14 +26,14 @@ const (
 )
 
 var (
-	selectedRouter onions.Router
-	gcm            cipher.AEAD
-	nonceSize      int
+	routers   onions.Routers
+	gcm       cipher.AEAD
+	nonceSize int
 )
 
-func initializeGCM(ptr int) {
-	var routers onions.Routers
-	selectedRouter = routers.Routers[ptr]
+func initializeGCM(ptr *int) {
+
+	var selectedRouter = routers.Routers[*ptr]
 	key, error := hex.DecodeString(selectedRouter.Key)
 	if error != nil {
 		fmt.Printf("Error reading key: %s\n", error.Error())
@@ -56,14 +58,30 @@ func initializeGCM(ptr int) {
 
 //SocketClient sends the message
 func SendOnion() {
+	ip := "127.0.0.1"
+	port := 3333
 
-	//for i := 0; i < len(routers.Routers); i++ {
-	// 	fmt.Println("User Type: " + routers.Routers[i].IP)
-	// 	fmt.Println("User Age: " + strconv.Itoa(routers.Routers[i].Port))
-	// 	fmt.Println("User Name: " + routers.Routers[i].Name)
-	//}
-	//addr := strings.Join([]string{ip, strconv.Itoa(port)}, ":")
-	conn, err := net.Dial("tcp", "127.0.0.1:3333")
+	a := []string{"Hell", "127.0.0.1:3335", "127.0.0.1:3334"}
+	for i := range a {
+
+		idx := len(a) - i - 1
+		log.Printf("i %d", i)
+		log.Printf("idx %d", idx)
+		initializeGCM(&idx)
+		for i2 := 0; i2 <= i; i2++ {
+			a[i2] = string(onions.Encrypt([]byte(a[i2]), gcm, nonceSize))
+			log.Printf("Encrypting")
+		}
+
+	}
+	//b := routers.Routers[i].IP + ":" + strconv.Itoa(routers.Routers[i].Port)
+	//log.Printf("Sending to ", b)
+
+	p := &onions.Message{a}
+	log.Printf("Send: ", p)
+
+	addr := strings.Join([]string{ip, strconv.Itoa(port)}, ":")
+	conn, err := net.Dial("tcp", string(addr))
 
 	if err != nil {
 		log.Fatalln(err)
@@ -73,17 +91,16 @@ func SendOnion() {
 	defer conn.Close()
 
 	encoder := gob.NewEncoder(conn)
-	a := []byte("Hell")
-	b := []byte("127.0.0.1:3334")
-	initializeGCM(1)
-	c := onions.Encrypt(a, gcm, nonceSize)
-	initializeGCM(0)
-	p := &onions.Message{onions.Encrypt(c, gcm, nonceSize), onions.Encrypt(b, gcm, nonceSize)}
+
+	// 	fmt.Println("User Type: " + routers.Routers[i].IP)
+	// 	fmt.Println("User Age: " + strconv.Itoa(routers.Routers[i].Port))
+	// 	fmt.Println("User Name: " + routers.Routers[i].Name)
+
 	encoder.Encode(p)
 
 	//conn.Write([]byte(ciphertext))
 	//conn.Write([]byte(StopCharacter))
-	//log.Printf("Send: %s", message)
+	log.Printf("Send: ", p, conn)
 
 	buff := make([]byte, 1024)
 	n, _ := conn.Read(buff)
@@ -100,7 +117,6 @@ func main() {
 	defer jsonFile.Close()
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 
-	var routers onions.Routers
 	json.Unmarshal(byteValue, &routers)
 	// for i := 0; i < len(routers.Routers); i++ {
 	// 	fmt.Println("User Type: " + routers.Routers[i].IP)

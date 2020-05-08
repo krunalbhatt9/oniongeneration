@@ -45,5 +45,5 @@ func Decrypt(ciphertext []byte, gcm cipher.AEAD, nonceSize int) (plaintext []byt
 
 //Message structure
 type Message struct {
-	A, B []byte
+	A []string
 }

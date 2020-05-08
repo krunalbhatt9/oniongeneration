@@ -11,6 +11,12 @@
 		"ip": "localhost",
 		"port": 3334,
 		"key": "d30b48a540e6166c6cba2ec8ac13bbcd31d79bd01c539051d68695aaa121fd33"
+	  },
+	  {
+		"name": "3",
+		"ip": "localhost",
+		"port": 3335,
+		"key": "d30b48a540e6166c6cba2ec8ac13bbcd31d79bd01c539051d68695aaa121fd44"
 	  }
 	]
   }

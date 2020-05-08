@@ -54,22 +54,23 @@ func initializeGCM() {
 }
 
 //SocketClient sends the message
-func SocketClient(addr []byte, message []byte) {
+func SocketClient(message []string, addr string) {
 	//addr := strings.Join([]string{IP, strconv.Itoa(port)}, ":")
-	conn, err := net.Dial("tcp", string(addr))
-
+	conn, err := net.Dial("tcp", addr)
 	if err != nil {
-		log.Fatalln(err)
 		log.Printf("Ip address could not be resolved. The message has reached the last node in the chain")
+		log.Printf("The message is :%s", addr)
+		//log.Fatalln(err)
 		//os.Exit(1)
+		return
 	}
 
 	defer conn.Close()
 	encoder := gob.NewEncoder(conn)
-	a := []byte("Hell")
-	b := []byte("add")
+	// a := []byte("Hell")
+	// b := []byte("add")
 
-	p := &onions.Message{a, b}
+	p := &onions.Message{message}
 	encoder.Encode(p)
 
 	//conn.Write([]byte(message))
@@ -83,21 +84,21 @@ func SocketClient(addr []byte, message []byte) {
 }
 
 //ReadandSendMessage reads and sends the message
-func ReadandSendMessage(message []byte, address []byte) {
-	plaintext, err := onions.Decrypt(message, gcm, nonceSize)
-	if err != nil {
-		log.Printf("Failed to decrypt.")
-		//os.Exit(1)
-	} else {
-		addr, err := onions.Decrypt(address, gcm, nonceSize)
+func ReadandSendMessage(message []string) {
+	length := len(message) - 1
+	for i, s := range message {
+		s, err := onions.Decrypt([]byte(s), gcm, nonceSize)
+		message[i] = string(s)
 		if err != nil {
-			log.Fatalf("Failed to decrypt. This message has reached the last node on the path.")
+			log.Printf("Failed to decrypt.Message %s recived", message)
+			return
 			//os.Exit(1)
-		} else {
-			log.Printf("Receive: %s %s", plaintext, addr)
-			SocketClient(addr, plaintext)
 		}
 	}
+	addr := message[length]
+	log.Printf("addr to send to", addr)
+	SocketClient(message[:length], addr)
+
 }
 
 //SocketServer sends the message
@@ -129,8 +130,8 @@ func handleConnection(conn net.Conn) {
 	dec := gob.NewDecoder(conn)
 	p := &onions.Message{}
 	dec.Decode(p)
-	//fmt.Printf("Received : %+v", p)
-	ReadandSendMessage(p.A, p.B)
+	fmt.Printf("Received : %s", p)
+	ReadandSendMessage(p.A)
 	conn.Close()
 }
 
@@ -196,6 +197,7 @@ func main() {
 	// 	fmt.Println("User Age: " + strconv.Itoa(routers.Routers[i].Port))
 	// 	fmt.Println("User Name: " + routers.Routers[i].Name)
 	// }
+
 	selectedRouter = routers.Routers[*ptr]
 	initializeGCM()
 	SocketServer(selectedRouter.IP, selectedRouter.Port)
